@@ -31,15 +31,13 @@ captureBtn.addEventListener('click', async () => {
     const b = data[i + 2];
     // 灰階
     const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-    // 對比增強：伸展到全範圍 (0-255) 使用簡單線性拉伸
-    // 这里先做一个简单的 contrast: 将 gray 调整为 (gray - 128) * factor + 128
+    // 對比增強：簡單線性拉伸
     const factor = 1.5; // 對比增強係數
     let contrast = (gray - 128) * factor + 128;
     if (contrast < 0) contrast = 0;
     if (contrast > 255) contrast = 255;
     data[i] = data[i + 1] = data[i + 2] = contrast;
-    // 保持 alpha 不變
-    // data[i+3] 保持不變
+    // alpha unchanged
   }
   ctx.putImageData(imgData, 0, 0);
 
@@ -50,15 +48,7 @@ captureBtn.addEventListener('click', async () => {
     const { data: { text } } = await Tesseract.recognize(
       processedImgData,
       'chi_tra+eng',
-      {
-        logger: m => console.log(m),
-        // 使用 PSM 6：假設單一均勻的文字塊
-        // 也可以嘗試 PSM 4 單列
-        // 參考: https://github.com/naptha/tesseract.js#tesseractrecognizeimage-language-options---promise
-        // 这里直接傳入 config object
-        // tesseract.js 認識 config 形式：{ lang: 'chi_tra+eng', psm: 6 }
-        // 实际上第二個參數是語言，第三個是 options
-      }
+      { logger: m => console.log(m), tessedit_pageseg_mode: 6 }
     );
     // 3️⃣ 簡單欄位擷取（僅示例，可依名片格式調整）
     const lines = text.split('\n').map(l => l.trim()).filter(l => l);
