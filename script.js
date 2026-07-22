@@ -1,6 +1,8 @@
 // version display
 const versionEl = document.getElementById('version');
-versionEl.textContent = 'v2.4';
+if (versionEl) {
+    versionEl.textContent = 'v3.0';
+}
 
 // 1️⃣ 取得後鏡頭
 const video = document.getElementById('preview');
@@ -35,7 +37,7 @@ captureBtn.addEventListener('click', async () => {
     const name = lines[0] || '';
     const phone = lines.find(l => /(\d{4}[-\s]?\d{3}[-\s]?\d{3})/.test(l)) || '';
     const email = lines.find(l => /[\w\.-]+@[\w\.-]+\.\w+/.test(l)) || '';
-    const org = lines.find(l => l.length>2 && !/^\d/.test(l) && l!==name && l!==phone && l!==email) || '';
+    const org = lines.find(l => l.length > 2 && !/^\d/.test(l) && l !== name && l !== phone && l !== email) || '';
 
     // 產生 vCard
     const vcard = [
@@ -43,7 +45,7 @@ captureBtn.addEventListener('click', async () => {
       'VERSION:3.0',
       `FN:${name}`,
       `ORG:${org}`,
-      `TEL;TYPE=WORK,VOICE:${phone.replace(/[^0-9+]/g,'')}`,
+      `TEL;TYPE=WORK,VOICE:${phone.replace(/[^0-9+]/g, '')}`,
       `EMAIL:${email}`,
       'END:VCARD'
     ].join('\r\n');
