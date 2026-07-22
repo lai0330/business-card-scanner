@@ -2,29 +2,70 @@ const video = document.getElementById('preview');
 const captureBtn = document.getElementById('captureBtn');
 const resultDiv = document.getElementById('result');
 const downloadLink = document.getElementById('downloadLink');
+const versionInfo = document.createElement('div');
+versionInfo.style.fontSize = '0.8em';
+versionInfo.style.color = '#666';
+versionInfo.style.marginTop = '1em';
+versionInfo.textContent = '版本: v1.2 (改善 OCR 預處理)';
+document.body.appendChild(versionInfo);
 
 // 1️⃣ 取得後鏡頭
 navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
   .then(stream => { video.srcObject = stream; })
   .catch(err => { alert('無法取得相機：' + err); });
 
-// 2️⃣ 拍照並送到 OCR
+// 2️⃣ 拍照並送到 OCR (含圖像預處理)
 captureBtn.addEventListener('click', async () => {
   const canvas = document.createElement('canvas');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-  const imgData = canvas.toDataURL('image/jpeg');
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  // 預處理：灰階 + 對比增強
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    // 灰階
+    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+    // 對比增強：伸展到全範圍 (0-255) 使用簡單線性拉伸
+    // 这里先做一个简单的 contrast: 将 gray 调整为 (gray - 128) * factor + 128
+    const factor = 1.5; // 對比增強係數
+    let contrast = (gray - 128) * factor + 128;
+    if (contrast < 0) contrast = 0;
+    if (contrast > 255) contrast = 255;
+    data[i] = data[i + 1] = data[i + 2] = contrast;
+    // 保持 alpha 不變
+    // data[i+3] 保持不變
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  const processedImgData = canvas.toDataURL('image/jpeg');
 
   resultDiv.textContent = 'OCR 辨識中…';
   try {
-    const { data: { text } } = await Tesseract.recognize(imgData, 'eng+chi_tra');
+    const { data: { text } } = await Tesseract.recognize(
+      processedImgData,
+      'chi_tra+eng',
+      {
+        logger: m => console.log(m),
+        // 使用 PSM 6：假設單一均勻的文字塊
+        // 也可以嘗試 PSM 4 單列
+        // 參考: https://github.com/naptha/tesseract.js#tesseractrecognizeimage-language-options---promise
+        // 这里直接傳入 config object
+        // tesseract.js 認識 config 形式：{ lang: 'chi_tra+eng', psm: 6 }
+        // 实际上第二個參數是語言，第三個是 options
+      }
+    );
     // 3️⃣ 簡單欄位擷取（僅示例，可依名片格式調整）
-    const lines = text.split('\n').map(l=>l.trim()).filter(l=>l);
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
     const name = lines[0] || '';
-    const phone = lines.find(l=>/(\d{4}-?\d{3}-?\d{3})/.test(l)) || '';
-    const email = lines.find(l=>/[\w\.-]+@[\w\.-]+\.\w+/.test(l)) || '';
-    const org = lines.find(l=>l.length>2 && !/^\d/.test(l) && l!==name && l!==phone && l!==email) || '';
+    const phone = lines.find(l => /(\d{4}[-\s]?\d{3}[-\s]?\d{3})/.test(l)) || '';
+    const email = lines.find(l => /[\w\.-]+@[\w\.-]+\.\w+/.test(l)) || '';
+    const org = lines.find(l => l.length > 2 && !/^\d/.test(l) && l !== name && l !== phone && l !== email) || '';
 
     // 4️⃣ 產生 vCard
     const vcard = [
@@ -32,12 +73,12 @@ captureBtn.addEventListener('click', async () => {
       'VERSION:3.0',
       `FN:${name}`,
       `ORG:${org}`,
-      `TEL;TYPE=WORK,VOICE:${phone.replace(/[^0-9+]/g,'')}`,
+      `TEL;TYPE=WORK,VOICE:${phone.replace(/[^0-9+]/g, '')}`,
       `EMAIL:${email}`,
       'END:VCARD'
     ].join('\r\n');
 
-    const blob = new Blob([vcard], {type:'text/vcard'});
+    const blob = new Blob([vcard], { type: 'text/vcard' });
     const url = URL.createObjectURL(blob);
     downloadLink.href = url;
     downloadLink.download = 'contact.vcard';
