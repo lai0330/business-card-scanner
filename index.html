@@ -6,8 +6,18 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>名片掃描器 <span id="version">v2.0</span></h1>
-<video id="preview" autoplay playsinline style="width:100%;max-width:400px;border:1px solid #ccc;"></video>
+<h1>名片掃描器 <span id="version">v2.3</span></h1>
+<div style="position:relative; display:inline-block;">
+  <video id="preview" autoplay playsinline style="width:400px;background:#000;"></video>
+  <div id="guide" style="
+    position:absolute;
+    top:20%; left:20%;
+    width:60%; height:60%;
+    border:2px dashed #fff;
+    pointer-events:none;
+    box-sizing:border-box;
+  "></div>
+</div>
 <br>
 <button id="captureBtn">拍照</button>
 <div id="result" style="margin-top:1em;"></div>
