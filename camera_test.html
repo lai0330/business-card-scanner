@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Camera Test</title>
+</head>
+<body>
+<h1>Camera Test</h1>
+<video id="preview" autoplay playsinline style="width:100%;max-width:400px;border:1px solid #ccc;"></video>
+<br>
+<button id="captureBtn">Capture</button>
+<div id="log"></div>
+<script>
+const video = document.getElementById('preview');
+const captureBtn = document.getElementById('captureBtn');
+const log = document.getElementById('log');
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+  .then(stream => { video.srcObject = stream; log.textContent = 'Camera started'; })
+  .catch(err => { log.textContent = 'Camera error: ' + err; });
+captureBtn.addEventListener('click', () => {
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  log.textContent = 'Captured, size: ' + canvas.width + 'x' + canvas.height;
+  // optionally show image
+  const img = document.createElement('img');
+  img.src = canvas.toDataURL('image/jpeg');
+  document.body.appendChild(img);
+});
+</script>
+</body>
+</html>
