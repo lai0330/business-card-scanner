@@ -1,6 +1,6 @@
 // version display
 const versionEl = document.getElementById('version');
-versionEl.textContent = 'v1.3 (簡易版：相機+OCR+欄位解析)';
+versionEl.textContent = 'v2.0 (基本可用版：相機+OCR+欄位解析)';
 
 // 1️⃣ 取得後鏡頭
 const video = document.getElementById('preview');
@@ -30,7 +30,7 @@ captureBtn.addEventListener('click', async () => {
       { logger: m => console.log(m) }
     );
 
-    // 簡單欄位擷取
+    // 簡單欄位擷取（可依實際名片調整）
     const lines = text.split('\n').map(l => l.trim()).filter(l => l);
     const name = lines[0] || '';
     const phone = lines.find(l => /(\d{4}[-\s]?\d{3}[-\s]?\d{3})/.test(l)) || '';
